@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dynamo Viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
+  <link rel="stylesheet" href="src/style.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="dropzone" class="dropzone">
+      <div class="dropzone-inner">
+        <i class="ti ti-affiliate dropzone-icon"></i>
+        <h1>Dynamo Viewer</h1>
+        <p>Drop a <code>.dyn</code> file here, or click to browse</p>
+        <button id="browse-btn" class="btn btn-primary">
+          <i class="ti ti-folder-open"></i> Open File
+        </button>
+      </div>
+    </div>
+
+    <div id="layout" class="layout hidden">
+      <header class="header">
+        <div class="header-title">
+          <i class="ti ti-affiliate"></i>
+          <span>Dynamo Viewer</span>
+        </div>
+        <div class="header-graph-name" id="header-graph-name"></div>
+        <button id="open-btn" class="btn btn-secondary">
+          <i class="ti ti-folder-open"></i> Open
+        </button>
+      </header>
+
+      <div class="body">
+        <aside class="sidebar">
+          <div class="sidebar-tabs">
+            <button class="tab-btn active" data-tab="graph">Graph</button>
+            <button class="tab-btn" data-tab="code">Code</button>
+            <button class="tab-btn" data-tab="deps">Deps</button>
+          </div>
+
+          <div class="sidebar-content">
+            <section class="meta-section" id="meta-section"></section>
+
+            <section class="stats-section" id="stats-section"></section>
+
+            <div class="tab-panel active" id="tab-graph">
+              <h3 class="panel-heading">Node Types</h3>
+              <div id="legend" class="legend"></div>
+            </div>
+
+            <div class="tab-panel" id="tab-code">
+              <h3 class="panel-heading">Code Blocks</h3>
+              <div id="code-list" class="code-list"></div>
+            </div>
+
+            <div class="tab-panel" id="tab-deps">
+              <h3 class="panel-heading">Dependencies</h3>
+              <div id="deps-list" class="deps-list"></div>
+            </div>
+          </div>
+        </aside>
+
+        <main class="canvas-area">
+          <div class="toolbar">
+            <button id="zoom-out" class="toolbar-btn" title="Zoom out"><i class="ti ti-zoom-out"></i></button>
+            <span id="zoom-label" class="zoom-label">100%</span>
+            <button id="zoom-in" class="toolbar-btn" title="Zoom in"><i class="ti ti-zoom-in"></i></button>
+            <div class="toolbar-sep"></div>
+            <button id="zoom-reset" class="toolbar-btn" title="1:1"><i class="ti ti-1-to-1"></i></button>
+            <button id="zoom-fit" class="toolbar-btn" title="Fit to view"><i class="ti ti-arrows-maximize"></i></button>
+          </div>
+          <div id="viewport" class="viewport">
+            <div id="canvas" class="canvas">
+              <svg id="edges" class="edges"></svg>
+              <div id="nodes-layer" class="nodes-layer"></div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <input type="file" id="file-input" accept=".dyn,.json" hidden />
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
