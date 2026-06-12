@@ -189,6 +189,12 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: width 0.15s, min-width 0.15s;
+}
+
+.sidebar.code-tab-active {
+  width: 780px;
+  min-width: 780px;
 }
 
 .sidebar-tabs {
@@ -348,6 +354,12 @@ body {
   border-radius: 8px;
   overflow: hidden;
   background: var(--bg3);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.code-block-item.highlight {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
 }
 
 .code-block-header {
@@ -504,6 +516,10 @@ body {
 }
 
 /* ---------- Graph nodes ---------- */
+.dyn-node.has-code {
+  cursor: pointer;
+}
+
 .dyn-node {
   position: absolute;
   min-width: 160px;
@@ -590,7 +606,7 @@ body {
 /* ---------- Node code tooltip ---------- */
 .code-tooltip {
   position: fixed;
-  z-index: 100;
+  z-index: 1000;
   max-width: 420px;
   max-height: 320px;
   overflow: auto;

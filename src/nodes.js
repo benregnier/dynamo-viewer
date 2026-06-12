@@ -144,6 +144,12 @@ export function createNodeElement(node) {
 
   if (typeof node.Code === 'string' && node.Code.trim() !== '') {
     attachCodeTooltip(el, node.Code);
+    el.classList.add('has-code');
+    el.addEventListener('click', () => {
+      el.dispatchEvent(
+        new CustomEvent('node-select', { bubbles: true, detail: { nodeId: node.Id } })
+      );
+    });
   }
 
   return el;

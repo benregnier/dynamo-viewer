@@ -1,6 +1,6 @@
 import { renderGraph } from './graph.js';
 import { PanZoom } from './panzoom.js';
-import { initTabs, renderMeta, renderStats, renderLegend, renderCode, renderDeps } from './sidebar.js';
+import { initTabs, renderMeta, renderStats, renderLegend, renderCode, renderDeps, showCodeForNode } from './sidebar.js';
 
 const dropzone = document.getElementById('dropzone');
 const layout = document.getElementById('layout');
@@ -23,6 +23,10 @@ let panZoom = null;
 let currentBounds = null;
 
 initTabs();
+
+nodesLayer.addEventListener('node-select', (e) => {
+  showCodeForNode(e.detail.nodeId);
+});
 
 panZoom = new PanZoom(viewport, canvas, {
   onChange: ({ scale }) => {

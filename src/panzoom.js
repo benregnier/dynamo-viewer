@@ -12,6 +12,8 @@ export class PanZoom {
     this.scale = 1;
 
     this._dragging = false;
+    this._captured = false;
+    this._dragThreshold = 4;
     this._lastX = 0;
     this._lastY = 0;
     this._pointers = new Map();
@@ -49,14 +51,15 @@ export class PanZoom {
   }
 
   _onPointerDown(e) {
-    this.viewport.setPointerCapture(e.pointerId);
     this._pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
     if (this._pointers.size === 1) {
       this._dragging = true;
+      this._captured = false;
+      this._downX = e.clientX;
+      this._downY = e.clientY;
       this._lastX = e.clientX;
       this._lastY = e.clientY;
-      this.viewport.classList.add('panning');
     } else if (this._pointers.size === 2) {
       this._dragging = false;
       this._lastPinchDist = this._pinchDistance();
@@ -83,6 +86,14 @@ export class PanZoom {
     }
 
     if (this._dragging) {
+      if (!this._captured) {
+        const dist = Math.hypot(e.clientX - this._downX, e.clientY - this._downY);
+        if (dist < this._dragThreshold) return;
+        this._captured = true;
+        this.viewport.setPointerCapture(e.pointerId);
+        this.viewport.classList.add('panning');
+      }
+
       const dx = e.clientX - this._lastX;
       const dy = e.clientY - this._lastY;
       this._lastX = e.clientX;
@@ -97,12 +108,16 @@ export class PanZoom {
     this._pointers.delete(e.pointerId);
     if (this._pointers.size === 0) {
       this._dragging = false;
+      this._captured = false;
       this.viewport.classList.remove('panning');
       this._lastPinchDist = null;
     } else if (this._pointers.size === 1) {
       this._lastPinchDist = null;
       const remaining = [...this._pointers.values()][0];
       this._dragging = true;
+      this._captured = false;
+      this._downX = remaining.x;
+      this._downY = remaining.y;
       this._lastX = remaining.x;
       this._lastY = remaining.y;
     }

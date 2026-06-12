@@ -4,16 +4,37 @@ import { classifyNode, getTypeColors, getTypeLabels } from './nodes.js';
 export function initTabs() {
   const tabButtons = document.querySelectorAll('.tab-btn');
   const panels = document.querySelectorAll('.tab-panel');
+  const sidebar = document.querySelector('.sidebar');
 
   tabButtons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      tabButtons.forEach((b) => b.classList.remove('active'));
-      panels.forEach((p) => p.classList.remove('active'));
-
-      btn.classList.add('active');
-      document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
-    });
+    btn.addEventListener('click', () => activateTab(btn.dataset.tab));
   });
+
+  function activateTab(tab) {
+    tabButtons.forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
+    panels.forEach((p) => p.classList.toggle('active', p.id === `tab-${tab}`));
+    sidebar.classList.toggle('code-tab-active', tab === 'code');
+  }
+}
+
+// Switch to the Code tab and scroll/highlight the code block for a given node.
+export function showCodeForNode(nodeId) {
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.tab-panel');
+  const sidebar = document.querySelector('.sidebar');
+
+  tabButtons.forEach((b) => b.classList.toggle('active', b.dataset.tab === 'code'));
+  panels.forEach((p) => p.classList.toggle('active', p.id === 'tab-code'));
+  sidebar.classList.add('code-tab-active');
+
+  const item = [...document.querySelectorAll('.code-block-item')].find(
+    (el) => el.dataset.nodeId === String(nodeId)
+  );
+  if (!item) return;
+
+  item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  item.classList.add('highlight');
+  setTimeout(() => item.classList.remove('highlight'), 1500);
 }
 
 // Render the meta section (Name, Author, Description) and header graph name.
@@ -121,12 +142,12 @@ export function renderCode(data) {
     if (typeof node.Code === 'string' && node.Code.trim() !== '') {
       const type = classifyNode(node);
       const title = type === 'python' ? 'Python' : 'CodeBlock';
-      container.appendChild(buildCodeItem(title, node.Code));
+      container.appendChild(buildCodeItem(title, node.Code, node.Id));
       count++;
     }
 
     if (typeof node.HintPath === 'string' && node.HintPath.trim() !== '') {
-      container.appendChild(buildCodeItem('File Path', node.HintPath));
+      container.appendChild(buildCodeItem('File Path', node.HintPath, node.Id));
       count++;
     }
   });
@@ -136,9 +157,10 @@ export function renderCode(data) {
   }
 }
 
-function buildCodeItem(title, code) {
+function buildCodeItem(title, code, nodeId) {
   const item = document.createElement('div');
   item.className = 'code-block-item';
+  if (nodeId != null) item.dataset.nodeId = String(nodeId);
 
   const header = document.createElement('div');
   header.className = 'code-block-header';
