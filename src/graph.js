@@ -15,11 +15,17 @@ export function renderGraph(data, nodesLayer, svg, annotationsLayer) {
   const connectors = data.Connectors || [];
   const { positions, offset } = computePositions(data, nodes);
 
+  const nodeViews = (data.View && data.View.NodeViews) || [];
+  const viewNameById = new Map();
+  nodeViews.forEach((v) => {
+    if (v.Id != null && typeof v.Name === 'string') viewNameById.set(v.Id, v.Name);
+  });
+
   const elementsById = new Map();
   const portElements = new Map(); // portId -> { el, kind, nodeId }
 
   nodes.forEach((node) => {
-    const el = createNodeElement(node);
+    const el = createNodeElement(node, viewNameById.get(node.Id));
     const pos = positions.get(node.Id) || { x: 0, y: 0 };
     el.style.left = `${pos.x}px`;
     el.style.top = `${pos.y}px`;

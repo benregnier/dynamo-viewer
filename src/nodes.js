@@ -69,14 +69,18 @@ function shortConcreteType(concrete) {
 }
 
 // Resolve the display label (and optional subtitle) for a node.
-export function resolveLabel(node) {
+// `viewName` is the node's name from View.NodeViews, used for custom nodes
+// whose FunctionSignature is just a GUID reference to their definition.
+export function resolveLabel(node, viewName) {
   const nick = node.NickName;
   if (nick && !GENERIC_NICKNAMES.has(nick)) {
     return { label: nick, subtitle: null };
   }
 
   const sig = node.FunctionSignature;
-  if (sig && !isGuid(sig)) {
+  if (sig && isGuid(sig)) {
+    if (viewName) return { label: viewName, subtitle: null };
+  } else if (sig) {
     const withoutArgs = sig.split('@')[0];
     const segments = withoutArgs.split('.');
     const label = segments[segments.length - 1];
@@ -101,10 +105,10 @@ export function resolveLabel(node) {
 }
 
 // Build the DOM element representing a single node.
-export function createNodeElement(node) {
+export function createNodeElement(node, viewName) {
   const type = classifyNode(node);
   const color = TYPE_COLORS[type];
-  const { label, subtitle } = resolveLabel(node);
+  const { label, subtitle } = resolveLabel(node, viewName);
 
   const el = document.createElement('div');
   el.className = 'dyn-node';
