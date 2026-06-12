@@ -149,7 +149,65 @@ export function createNodeElement(node) {
 
   el.appendChild(body);
 
+  if (typeof node.Description === 'string' && node.Description.trim() !== '') {
+    attachDescriptionTooltip(el, node.Description);
+  }
+
   return el;
+}
+
+// Shared tooltip element used to preview a node's Description on hover.
+let descriptionTooltipEl = null;
+
+function getDescriptionTooltip() {
+  if (!descriptionTooltipEl) {
+    descriptionTooltipEl = document.createElement('div');
+    descriptionTooltipEl.className = 'node-description-tooltip';
+    document.body.appendChild(descriptionTooltipEl);
+  }
+  return descriptionTooltipEl;
+}
+
+function attachDescriptionTooltip(el, description) {
+  el.addEventListener('mouseenter', () => {
+    const tooltip = getDescriptionTooltip();
+    tooltip.textContent = description;
+    tooltip.classList.add('visible');
+    positionDescriptionTooltip(tooltip, el);
+  });
+
+  el.addEventListener('mousemove', () => {
+    const tooltip = getDescriptionTooltip();
+    if (tooltip.classList.contains('visible')) {
+      positionDescriptionTooltip(tooltip, el);
+    }
+  });
+
+  el.addEventListener('mouseleave', () => {
+    getDescriptionTooltip().classList.remove('visible');
+  });
+}
+
+function positionDescriptionTooltip(tooltip, anchorEl) {
+  const rect = anchorEl.getBoundingClientRect();
+  const margin = 8;
+
+  let left = rect.left;
+  let top = rect.bottom + margin;
+
+  const tooltipRect = tooltip.getBoundingClientRect();
+  if (left + tooltipRect.width > window.innerWidth) {
+    left = window.innerWidth - tooltipRect.width - margin;
+  }
+  if (left < 0) left = margin;
+
+  if (top + tooltipRect.height > window.innerHeight) {
+    top = rect.top - tooltipRect.height - margin;
+  }
+  if (top < 0) top = margin;
+
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${top}px`;
 }
 
 function createPortElement(port, kind) {

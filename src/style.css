@@ -617,6 +617,27 @@ body {
   stroke-width: 1.5;
 }
 
+/* ---------- Node description tooltip ---------- */
+.node-description-tooltip {
+  position: fixed;
+  z-index: 1000;
+  max-width: 320px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  pointer-events: none;
+  display: none;
+}
+
+.node-description-tooltip.visible {
+  display: block;
+}
+
 /* ---------- Inline node code preview ---------- */
 .dyn-node-code {
   margin: 6px 0 0;
