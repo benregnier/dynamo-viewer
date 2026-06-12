@@ -121,7 +121,7 @@ export function createNodeElement(node) {
     body.appendChild(subtitleEl);
   }
 
-  if (typeof node.Code === 'string' && node.Code.trim() !== '') {
+  if (type === 'codeblock' && typeof node.Code === 'string' && node.Code.trim() !== '') {
     const codeEl = document.createElement('pre');
     codeEl.className = 'dyn-node-code';
     codeEl.textContent = node.Code;
@@ -151,6 +151,15 @@ export function createNodeElement(node) {
 
   if (typeof node.Description === 'string' && node.Description.trim() !== '') {
     attachDescriptionTooltip(el, node.Description);
+  }
+
+  if (type === 'python' && typeof node.Code === 'string' && node.Code.trim() !== '') {
+    el.classList.add('has-code');
+    el.addEventListener('click', () => {
+      el.dispatchEvent(
+        new CustomEvent('node-select', { bubbles: true, detail: { nodeId: node.Id } })
+      );
+    });
   }
 
   return el;

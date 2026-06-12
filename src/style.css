@@ -354,6 +354,12 @@ body {
   border-radius: 8px;
   overflow: hidden;
   background: var(--bg3);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.code-block-item.highlight {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
 }
 
 .code-block-header {
@@ -545,6 +551,14 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   font-size: 12px;
   user-select: none;
+}
+
+.dyn-node.has-code {
+  cursor: pointer;
+}
+
+.dyn-node.has-code:hover {
+  border-color: var(--accent);
 }
 
 .dyn-node-body {
