@@ -73,21 +73,39 @@ export function renderGraph(data, nodesLayer, svg, annotationsLayer) {
   // Render annotation groups (drawn behind nodes and connectors).
   if (annotationsLayer && offset) {
     const annotations = (data.View && data.View.Annotations) || [];
+    const padding = 20;
     annotations.forEach((annotation) => {
       if (typeof annotation.Left !== 'number' || typeof annotation.Top !== 'number') return;
 
-      const x = annotation.Left + offset.x;
-      const y = annotation.Top + offset.y;
-      const width = annotation.Width || 200;
-      const height = annotation.Height || 100;
+      let x = annotation.Left + offset.x;
+      let y = annotation.Top + offset.y;
+      let right = x + (annotation.Width || 200);
+      let bottom = y + (annotation.Height || 100);
+
+      // Expand the box to fully enclose its member nodes, in case the
+      // recorded annotation bounds are smaller than the rendered nodes.
+      (annotation.Nodes || []).forEach((nodeId) => {
+        const el = elementsById.get(nodeId);
+        const pos = positions.get(nodeId);
+        if (!el || !pos) return;
+        const w = el.offsetWidth || 160;
+        const h = el.offsetHeight || 60;
+        x = Math.min(x, pos.x - padding);
+        y = Math.min(y, pos.y - padding);
+        right = Math.max(right, pos.x + w + padding);
+        bottom = Math.max(bottom, pos.y + h + padding);
+      });
+
+      const width = right - x;
+      const height = bottom - y;
 
       annotationsLayer.appendChild(createAnnotationElement(annotation, x, y, width, height));
 
       minX = Math.min(minX, x);
       minY = Math.min(minY, y);
-      maxX = Math.max(maxX, x + width);
+      maxX = Math.max(maxX, right);
       // Leave room below the box for the wrapped title text.
-      maxY = Math.max(maxY, y + height + 40);
+      maxY = Math.max(maxY, bottom + 40);
     });
   }
 
