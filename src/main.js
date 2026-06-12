@@ -12,6 +12,7 @@ const viewport = document.getElementById('viewport');
 const canvas = document.getElementById('canvas');
 const nodesLayer = document.getElementById('nodes-layer');
 const edgesSvg = document.getElementById('edges');
+const annotationsLayer = document.getElementById('annotations-layer');
 
 const zoomLabel = document.getElementById('zoom-label');
 const zoomInBtn = document.getElementById('zoom-in');
@@ -95,7 +96,7 @@ function renderApp(data) {
   renderCode(data);
   renderDeps(data);
 
-  currentBounds = renderGraph(data, nodesLayer, edgesSvg);
+  currentBounds = renderGraph(data, nodesLayer, edgesSvg, annotationsLayer);
 
   // Run fit-to-view after layout settles so viewport dimensions are correct.
   requestAnimationFrame(() => {

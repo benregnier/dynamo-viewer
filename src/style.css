@@ -459,6 +459,30 @@ body {
   left: 0;
 }
 
+.annotations-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.dyn-annotation {
+  position: absolute;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  background: rgba(91, 106, 212, 0.1);
+  box-sizing: border-box;
+}
+
+.dyn-annotation-title {
+  position: absolute;
+  top: -28px;
+  left: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  white-space: nowrap;
+}
+
 /* ---------- Toolbar ---------- */
 .toolbar {
   position: absolute;
