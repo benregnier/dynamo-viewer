@@ -55,6 +55,12 @@ export function classifyNode(node) {
   return 'function';
 }
 
+// Test whether a string is a GUID (used by custom nodes to reference their
+// definition rather than encoding a readable function signature).
+function isGuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
 // Strip a `,assembly` suffix and return the last `.`-delimited segment.
 function shortConcreteType(concrete) {
   const withoutAssembly = concrete.split(',')[0];
@@ -70,7 +76,7 @@ export function resolveLabel(node) {
   }
 
   const sig = node.FunctionSignature;
-  if (sig) {
+  if (sig && !isGuid(sig)) {
     const withoutArgs = sig.split('@')[0];
     const segments = withoutArgs.split('.');
     const label = segments[segments.length - 1];
@@ -82,7 +88,7 @@ export function resolveLabel(node) {
   const concrete = node.ConcreteType;
   if (concrete) {
     const short = shortConcreteType(concrete);
-    if (short !== 'DSFunction' && short !== 'DSVarArgFunction') {
+    if (!GENERIC_NICKNAMES.has(short)) {
       return { label: short, subtitle: null };
     }
   }
