@@ -163,7 +163,9 @@ export function createNodeElement(node, viewName) {
     attachDescriptionTooltip(el, node.Description);
   }
 
-  if (type === 'python' && typeof node.Code === 'string' && node.Code.trim() !== '') {
+  const hasCode = typeof node.Code === 'string' && node.Code.trim() !== '';
+  const hasHintPath = typeof node.HintPath === 'string' && node.HintPath.trim() !== '';
+  if (hasCode || hasHintPath) {
     el.classList.add('has-code');
     el.addEventListener('click', () => {
       el.dispatchEvent(

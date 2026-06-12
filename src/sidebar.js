@@ -19,18 +19,20 @@ function activateTab(tab) {
   sidebar.classList.toggle('code-tab-active', tab === 'code');
 }
 
-// Switch to the Code tab and scroll/highlight the code block for a given node.
+// Switch to the Code tab and scroll/highlight the code block(s) for a given node.
 export function showCodeForNode(nodeId) {
   activateTab('code');
 
-  const item = [...document.querySelectorAll('.code-block-item')].find(
+  const items = [...document.querySelectorAll('.code-block-item')].filter(
     (el) => el.dataset.nodeId === String(nodeId)
   );
-  if (!item) return;
+  if (!items.length) return;
 
-  item.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  item.classList.add('highlight');
-  setTimeout(() => item.classList.remove('highlight'), 1500);
+  items[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  items.forEach((item) => {
+    item.classList.add('highlight');
+    setTimeout(() => item.classList.remove('highlight'), 1500);
+  });
 }
 
 // Render the meta section (Name, Author, Description) and header graph name.
