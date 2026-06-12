@@ -481,12 +481,14 @@ body {
 
 .dyn-annotation-title {
   position: absolute;
-  top: -28px;
+  bottom: 100%;
   left: 0;
   font-size: 13px;
   font-weight: 600;
   color: var(--text2);
-  white-space: nowrap;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 100%;
 }
 
 /* ---------- Toolbar ---------- */
