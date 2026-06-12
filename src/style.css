@@ -481,7 +481,7 @@ body {
 
 .dyn-annotation-title {
   position: absolute;
-  bottom: 100%;
+  top: 100%;
   left: 0;
   width: 100%;
   padding: 2px 6px;

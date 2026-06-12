@@ -80,7 +80,8 @@ export function renderGraph(data, nodesLayer, svg, annotationsLayer) {
       minX = Math.min(minX, x);
       minY = Math.min(minY, y);
       maxX = Math.max(maxX, x + width);
-      maxY = Math.max(maxY, y + height);
+      // Leave room below the box for the wrapped title text.
+      maxY = Math.max(maxY, y + height + 40);
     });
   }
 
