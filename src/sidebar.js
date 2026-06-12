@@ -17,26 +17,6 @@ export function initTabs() {
   }
 }
 
-// Switch to the Code tab and scroll/highlight the code block for a given node.
-export function showCodeForNode(nodeId) {
-  const tabButtons = document.querySelectorAll('.tab-btn');
-  const panels = document.querySelectorAll('.tab-panel');
-  const sidebar = document.querySelector('.sidebar');
-
-  tabButtons.forEach((b) => b.classList.toggle('active', b.dataset.tab === 'code'));
-  panels.forEach((p) => p.classList.toggle('active', p.id === 'tab-code'));
-  sidebar.classList.add('code-tab-active');
-
-  const item = [...document.querySelectorAll('.code-block-item')].find(
-    (el) => el.dataset.nodeId === String(nodeId)
-  );
-  if (!item) return;
-
-  item.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  item.classList.add('highlight');
-  setTimeout(() => item.classList.remove('highlight'), 1500);
-}
-
 // Render the meta section (Name, Author, Description) and header graph name.
 export function renderMeta(data) {
   const meta = document.getElementById('meta-section');

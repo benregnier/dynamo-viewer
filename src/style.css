@@ -354,12 +354,6 @@ body {
   border-radius: 8px;
   overflow: hidden;
   background: var(--bg3);
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.code-block-item.highlight {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
 }
 
 .code-block-header {
@@ -516,14 +510,10 @@ body {
 }
 
 /* ---------- Graph nodes ---------- */
-.dyn-node.has-code {
-  cursor: pointer;
-}
-
 .dyn-node {
   position: absolute;
   min-width: 160px;
-  max-width: 240px;
+  max-width: 320px;
   background: var(--bg2);
   border: 1px solid var(--border2);
   border-radius: 8px;
@@ -603,32 +593,19 @@ body {
   stroke-width: 1.5;
 }
 
-/* ---------- Node code tooltip ---------- */
-.code-tooltip {
-  position: fixed;
-  z-index: 1000;
-  max-width: 420px;
-  max-height: 320px;
-  overflow: auto;
-  background: var(--bg2);
-  border: 1px solid var(--border2);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  padding: 10px;
-  pointer-events: none;
-  display: none;
-}
-
-.code-tooltip.visible {
-  display: block;
-}
-
-.code-tooltip pre {
-  margin: 0;
+/* ---------- Inline node code preview ---------- */
+.dyn-node-code {
+  margin: 6px 0 0;
+  padding: 6px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  line-height: 1.6;
-  color: var(--text);
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text2);
   white-space: pre-wrap;
   word-break: break-word;
+  max-height: 200px;
+  overflow: auto;
 }

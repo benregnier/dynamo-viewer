@@ -121,6 +121,13 @@ export function createNodeElement(node) {
     body.appendChild(subtitleEl);
   }
 
+  if (typeof node.Code === 'string' && node.Code.trim() !== '') {
+    const codeEl = document.createElement('pre');
+    codeEl.className = 'dyn-node-code';
+    codeEl.textContent = node.Code;
+    body.appendChild(codeEl);
+  }
+
   const ports = document.createElement('div');
   ports.className = 'dyn-node-ports';
 
@@ -142,74 +149,7 @@ export function createNodeElement(node) {
 
   el.appendChild(body);
 
-  if (typeof node.Code === 'string' && node.Code.trim() !== '') {
-    attachCodeTooltip(el, node.Code);
-    el.classList.add('has-code');
-    el.addEventListener('click', () => {
-      el.dispatchEvent(
-        new CustomEvent('node-select', { bubbles: true, detail: { nodeId: node.Id } })
-      );
-    });
-  }
-
   return el;
-}
-
-// Shared tooltip element used to preview code on hover.
-let tooltipEl = null;
-
-function getTooltip() {
-  if (!tooltipEl) {
-    tooltipEl = document.createElement('div');
-    tooltipEl.className = 'code-tooltip';
-    const pre = document.createElement('pre');
-    tooltipEl.appendChild(pre);
-    document.body.appendChild(tooltipEl);
-  }
-  return tooltipEl;
-}
-
-// Show the node's Code in a floating tooltip while hovering over it.
-function attachCodeTooltip(el, code) {
-  el.addEventListener('mouseenter', () => {
-    const tooltip = getTooltip();
-    tooltip.querySelector('pre').textContent = code;
-    tooltip.classList.add('visible');
-    positionTooltip(tooltip, el);
-  });
-
-  el.addEventListener('mousemove', () => {
-    const tooltip = getTooltip();
-    if (tooltip.classList.contains('visible')) {
-      positionTooltip(tooltip, el);
-    }
-  });
-
-  el.addEventListener('mouseleave', () => {
-    getTooltip().classList.remove('visible');
-  });
-}
-
-function positionTooltip(tooltip, anchorEl) {
-  const rect = anchorEl.getBoundingClientRect();
-  const margin = 8;
-
-  let left = rect.right + margin;
-  let top = rect.top;
-
-  const tooltipRect = tooltip.getBoundingClientRect();
-  if (left + tooltipRect.width > window.innerWidth) {
-    left = rect.left - tooltipRect.width - margin;
-  }
-  if (left < 0) left = margin;
-
-  if (top + tooltipRect.height > window.innerHeight) {
-    top = window.innerHeight - tooltipRect.height - margin;
-  }
-  if (top < 0) top = margin;
-
-  tooltip.style.left = `${left}px`;
-  tooltip.style.top = `${top}px`;
 }
 
 function createPortElement(port, kind) {
