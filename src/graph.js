@@ -4,8 +4,12 @@ const GRID_COLS = 6;
 const GRID_CELL_W = 280;
 const GRID_CELL_H = 180;
 
+const ANNOTATION_PADDING = 20;
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
 // Render the node graph (nodes + connectors + annotations) into the given layers.
-// Returns the content bounding box in canvas coordinates.
+// Returns a Graph object that tracks node/annotation positions so they can be
+// moved interactively after rendering.
 export function renderGraph(data, nodesLayer, svg, annotationsLayer) {
   nodesLayer.innerHTML = '';
   svg.innerHTML = '';
@@ -21,128 +25,224 @@ export function renderGraph(data, nodesLayer, svg, annotationsLayer) {
     if (v.Id != null && typeof v.Name === 'string') viewNameById.set(v.Id, v.Name);
   });
 
-  const elementsById = new Map();
+  const graph = new Graph(nodesLayer, svg);
   const portElements = new Map(); // portId -> { el, kind, nodeId }
 
   nodes.forEach((node) => {
     const el = createNodeElement(node, viewNameById.get(node.Id));
     const pos = positions.get(node.Id) || { x: 0, y: 0 };
-    el.style.left = `${pos.x}px`;
-    el.style.top = `${pos.y}px`;
     nodesLayer.appendChild(el);
-    elementsById.set(node.Id, el);
+    graph.addNode(node.Id, el, pos.x, pos.y);
 
     el.querySelectorAll('.port-col.inputs .port').forEach((portEl, i) => {
       const port = (node.Inputs || [])[i];
       if (port && port.Id != null) {
-        portElements.set(port.Id, { el: portEl, kind: 'input', nodeEl: el });
+        portElements.set(port.Id, { el: portEl, kind: 'input', nodeId: node.Id });
       }
     });
     el.querySelectorAll('.port-col.outputs .port').forEach((portEl, i) => {
       const port = (node.Outputs || [])[i];
       if (port && port.Id != null) {
-        portElements.set(port.Id, { el: portEl, kind: 'output', nodeEl: el });
+        portElements.set(port.Id, { el: portEl, kind: 'output', nodeId: node.Id });
       }
     });
   });
 
-  // Compute content bounds from rendered node sizes.
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-
-  nodes.forEach((node) => {
-    const el = elementsById.get(node.Id);
-    const pos = positions.get(node.Id) || { x: 0, y: 0 };
-    const w = el.offsetWidth || 160;
-    const h = el.offsetHeight || 60;
-    minX = Math.min(minX, pos.x);
-    minY = Math.min(minY, pos.y);
-    maxX = Math.max(maxX, pos.x + w);
-    maxY = Math.max(maxY, pos.y + h);
-  });
-
-  if (!isFinite(minX)) {
-    minX = 0;
-    minY = 0;
-    maxX = 100;
-    maxY = 100;
-  }
-
   // Render annotation groups (drawn behind nodes and connectors).
   if (annotationsLayer && offset) {
     const annotations = (data.View && data.View.Annotations) || [];
-    const padding = 20;
     annotations.forEach((annotation) => {
       if (typeof annotation.Left !== 'number' || typeof annotation.Top !== 'number') return;
 
-      let x = annotation.Left + offset.x;
-      let y = annotation.Top + offset.y;
-      let right = x + (annotation.Width || 200);
-      let bottom = y + (annotation.Height || 100);
+      const rect = {
+        x: annotation.Left + offset.x,
+        y: annotation.Top + offset.y,
+        width: annotation.Width || 200,
+        height: annotation.Height || 100,
+      };
+      const memberIds = (annotation.Nodes || []).filter((id) => graph.nodes.has(id));
 
+      const el = createAnnotationElement(annotation);
+      annotationsLayer.appendChild(el);
       // Expand the box to fully enclose its member nodes, in case the
       // recorded annotation bounds are smaller than the rendered nodes.
-      (annotation.Nodes || []).forEach((nodeId) => {
-        const el = elementsById.get(nodeId);
-        const pos = positions.get(nodeId);
-        if (!el || !pos) return;
-        const w = el.offsetWidth || 160;
-        const h = el.offsetHeight || 60;
-        x = Math.min(x, pos.x - padding);
-        y = Math.min(y, pos.y - padding);
-        right = Math.max(right, pos.x + w + padding);
-        bottom = Math.max(bottom, pos.y + h + padding);
-      });
-
-      const width = right - x;
-      const height = bottom - y;
-
-      annotationsLayer.appendChild(createAnnotationElement(annotation, x, y, width, height));
-
-      minX = Math.min(minX, x);
-      minY = Math.min(minY, y);
-      maxX = Math.max(maxX, right);
-      // Leave room below the box for the wrapped title text.
-      maxY = Math.max(maxY, bottom + 40);
+      graph.addAnnotation(el, memberIds, unionRect(rect, graph.membersRect(memberIds)));
     });
   }
 
   // Draw connectors as cubic bezier curves between port dots.
-  const svgNS = 'http://www.w3.org/2000/svg';
   connectors.forEach((conn) => {
     const start = portElements.get(conn.Start);
     const end = portElements.get(conn.End);
     if (!start || !end) return;
 
-    const startPt = portCenter(start.el, start.kind, nodesLayer);
-    const endPt = portCenter(end.el, end.kind, nodesLayer);
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('class', 'edge-path');
+    svg.appendChild(path);
+    graph.addEdge(path, start, end);
+  });
+
+  graph.redrawAllEdges();
+  graph.updateSvgSize();
+
+  return graph;
+}
+
+// Tracks rendered node, connector, and annotation elements and keeps them in
+// sync as nodes are moved.
+class Graph {
+  constructor(nodesLayer, svg) {
+    this.nodesLayer = nodesLayer;
+    this.svg = svg;
+    this.nodes = new Map(); // nodeId -> { el, x, y, edges: [], annotations: [] }
+    this.edges = [];
+    this.annotations = []; // { el, memberIds, x, y, width, height }
+  }
+
+  addNode(id, el, x, y) {
+    const entry = { el, x, y, edges: [], annotations: [] };
+    this.nodes.set(id, entry);
+    placeElement(el, x, y);
+  }
+
+  addEdge(path, start, end) {
+    const edge = { path, start, end };
+    this.edges.push(edge);
+    this.nodes.get(start.nodeId).edges.push(edge);
+    if (end.nodeId !== start.nodeId) this.nodes.get(end.nodeId).edges.push(edge);
+  }
+
+  addAnnotation(el, memberIds, rect) {
+    const annotation = { el, memberIds, ...rect };
+    this.annotations.push(annotation);
+    memberIds.forEach((id) => this.nodes.get(id).annotations.push(annotation));
+    placeAnnotation(annotation);
+  }
+
+  // Bounding box of the given member nodes, padded, or null if there are none.
+  membersRect(memberIds) {
+    let rect = null;
+    memberIds.forEach((id) => {
+      const { el, x, y } = this.nodes.get(id);
+      const w = el.offsetWidth || 160;
+      const h = el.offsetHeight || 60;
+      rect = unionRect(rect, {
+        x: x - ANNOTATION_PADDING,
+        y: y - ANNOTATION_PADDING,
+        width: w + ANNOTATION_PADDING * 2,
+        height: h + ANNOTATION_PADDING * 2,
+      });
+    });
+    return rect;
+  }
+
+  // Move the given nodes by (dx, dy) in canvas coordinates, updating their
+  // connectors and any annotation groups that contain them.
+  moveNodes(ids, dx, dy) {
+    const edges = new Set();
+    const annotations = new Set();
+    ids.forEach((id) => {
+      const node = this.nodes.get(id);
+      if (!node) return;
+      node.x += dx;
+      node.y += dy;
+      placeElement(node.el, node.x, node.y);
+      node.edges.forEach((e) => edges.add(e));
+      node.annotations.forEach((a) => annotations.add(a));
+    });
+    edges.forEach((e) => this.drawEdge(e));
+    // Refit groups around their members, as Dynamo does when a member moves.
+    annotations.forEach((a) => {
+      Object.assign(a, this.membersRect(a.memberIds));
+      placeAnnotation(a);
+    });
+  }
+
+  // Move an annotation group together with all of its member nodes.
+  moveAnnotation(annotation, dx, dy) {
+    annotation.x += dx;
+    annotation.y += dy;
+    placeAnnotation(annotation);
+    if (annotation.memberIds.length) this.moveNodes(annotation.memberIds, dx, dy);
+  }
+
+  drawEdge({ path, start, end }) {
+    const startPt = portCenter(start.el, this.nodesLayer);
+    const endPt = portCenter(end.el, this.nodesLayer);
 
     const dx = Math.max(Math.abs(endPt.x - startPt.x) * 0.5, 40);
     const c1x = startPt.x + dx;
     const c2x = endPt.x - dx;
 
-    const path = document.createElementNS(svgNS, 'path');
-    path.setAttribute('class', 'edge-path');
     path.setAttribute(
       'd',
       `M ${startPt.x} ${startPt.y} C ${c1x} ${startPt.y}, ${c2x} ${endPt.y}, ${endPt.x} ${endPt.y}`
     );
-    svg.appendChild(path);
-  });
+  }
 
-  const bounds = {
-    x: minX,
-    y: minY,
-    width: maxX - minX,
-    height: maxY - minY,
+  redrawAllEdges() {
+    this.edges.forEach((e) => this.drawEdge(e));
+  }
+
+  // Content bounding box in canvas coordinates.
+  getBounds() {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    this.nodes.forEach(({ el, x, y }) => {
+      const w = el.offsetWidth || 160;
+      const h = el.offsetHeight || 60;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x + w);
+      maxY = Math.max(maxY, y + h);
+    });
+
+    this.annotations.forEach((a) => {
+      minX = Math.min(minX, a.x);
+      minY = Math.min(minY, a.y);
+      maxX = Math.max(maxX, a.x + a.width);
+      // Leave room below the box for the wrapped title text.
+      maxY = Math.max(maxY, a.y + a.height + 40);
+    });
+
+    if (!isFinite(minX)) {
+      return { x: 0, y: 0, width: 100, height: 100 };
+    }
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  }
+
+  updateSvgSize() {
+    const bounds = this.getBounds();
+    this.svg.setAttribute('width', `${Math.max(bounds.x + bounds.width + 200, 1)}`);
+    this.svg.setAttribute('height', `${Math.max(bounds.y + bounds.height + 200, 1)}`);
+  }
+}
+
+function placeElement(el, x, y) {
+  el.style.left = `${x}px`;
+  el.style.top = `${y}px`;
+}
+
+function placeAnnotation(a) {
+  placeElement(a.el, a.x, a.y);
+  a.el.style.width = `${a.width}px`;
+  a.el.style.height = `${a.height}px`;
+}
+
+function unionRect(a, b) {
+  if (!a) return b;
+  if (!b) return a;
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  return {
+    x,
+    y,
+    width: Math.max(a.x + a.width, b.x + b.width) - x,
+    height: Math.max(a.y + a.height, b.y + b.height) - y,
   };
-
-  svg.setAttribute('width', `${bounds.x + bounds.width + 200}`);
-  svg.setAttribute('height', `${bounds.y + bounds.height + 200}`);
-
-  return bounds;
 }
 
 // Compute node positions from View.NodeViews, normalized so the
@@ -192,13 +292,9 @@ function computePositions(data, nodes) {
 }
 
 // Build the DOM element for an annotation (group) box.
-function createAnnotationElement(annotation, x, y, width, height) {
+function createAnnotationElement(annotation) {
   const el = document.createElement('div');
   el.className = 'dyn-annotation';
-  el.style.left = `${x}px`;
-  el.style.top = `${y}px`;
-  el.style.width = `${width}px`;
-  el.style.height = `${height}px`;
 
   const color = parseAnnotationColor(annotation.Background);
   if (color) {
@@ -250,7 +346,7 @@ function gridPosition(index) {
 }
 
 // Compute the center point of a port dot in coordinates relative to `ancestor`.
-function portCenter(portEl, kind, ancestor) {
+function portCenter(portEl, ancestor) {
   const dot = portEl.querySelector('.port-dot');
   const target = dot || portEl;
 

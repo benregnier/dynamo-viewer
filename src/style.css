@@ -477,6 +477,7 @@ body {
   border-radius: 8px;
   background: rgba(91, 106, 212, 0.1);
   box-sizing: border-box;
+  cursor: grab;
 }
 
 .dyn-annotation-title {
@@ -555,10 +556,16 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   font-size: 12px;
   user-select: none;
+  cursor: grab;
 }
 
 .dyn-node.has-code {
   cursor: pointer;
+}
+
+.dyn-node.dragging,
+.dyn-annotation.dragging {
+  cursor: grabbing;
 }
 
 .dyn-node.has-code:hover {

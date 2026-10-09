@@ -1,5 +1,6 @@
 import { renderGraph } from './graph.js';
 import { PanZoom } from './panzoom.js';
+import { DragController } from './drag.js';
 import { initTabs, renderMeta, renderStats, renderLegend, renderCode, renderDeps, showCodeForNode } from './sidebar.js';
 
 const dropzone = document.getElementById('dropzone');
@@ -21,7 +22,7 @@ const zoomResetBtn = document.getElementById('zoom-reset');
 const zoomFitBtn = document.getElementById('zoom-fit');
 
 let panZoom = null;
-let currentBounds = null;
+let currentGraph = null;
 
 initTabs();
 
@@ -33,6 +34,12 @@ panZoom = new PanZoom(viewport, canvas, {
   onChange: ({ scale }) => {
     zoomLabel.textContent = `${Math.round(scale * 100)}%`;
   },
+});
+
+new DragController(nodesLayer, annotationsLayer, {
+  getGraph: () => currentGraph,
+  getScale: () => panZoom.scale,
+  onDragEnd: () => currentGraph.updateSvgSize(),
 });
 
 // ---- File loading ----
@@ -100,11 +107,11 @@ function renderApp(data) {
   renderCode(data);
   renderDeps(data);
 
-  currentBounds = renderGraph(data, nodesLayer, edgesSvg, annotationsLayer);
+  currentGraph = renderGraph(data, nodesLayer, edgesSvg, annotationsLayer);
 
   // Run fit-to-view after layout settles so viewport dimensions are correct.
   requestAnimationFrame(() => {
-    panZoom.fitToBounds(currentBounds);
+    panZoom.fitToBounds(currentGraph.getBounds());
   });
 }
 
@@ -114,5 +121,5 @@ zoomInBtn.addEventListener('click', () => panZoom.zoomBy(1.25));
 zoomOutBtn.addEventListener('click', () => panZoom.zoomBy(0.8));
 zoomResetBtn.addEventListener('click', () => panZoom.setTransform(panZoom.x, panZoom.y, 1));
 zoomFitBtn.addEventListener('click', () => {
-  if (currentBounds) panZoom.fitToBounds(currentBounds);
+  if (currentGraph) panZoom.fitToBounds(currentGraph.getBounds());
 });

@@ -15,6 +15,7 @@ dynamo-viewer/
     ├── main.js       # Wires everything together, handles file loading
     ├── graph.js       # Computes node layout and draws connector edges
     ├── panzoom.js     # Self-contained pan/zoom controller for the canvas
+    ├── drag.js        # Drag-to-move for nodes and annotation groups
     ├── nodes.js       # Node type classification, colors, and label resolution
     ├── sidebar.js     # Renders meta info, stats, legend, code, and deps panels
     └── style.css      # Dark theme styling
@@ -37,7 +38,8 @@ dynamo-viewer/
 - Nodes are positioned using `View.NodeViews[].X/Y` from the file, normalized so the top-left-most node sits at `(24, 24)`. If no view data exists, nodes fall back to a simple grid layout.
 - Each node is rendered as a DOM `<div>` with a colored left bar (by node type), a resolved label, an optional namespace subtitle, and input/output port dots.
 - Connectors are drawn in an SVG overlay as cubic bezier curves between port dots, with horizontal tangents for a left-to-right flow.
-- Pan (drag) and zoom (scroll wheel + pinch) are handled by a small self-contained `PanZoom` class — no external libraries.
+- Nodes can be dragged to rearrange the graph; their connectors follow, and any group containing them refits around its members. Dragging a group's background moves the whole group with its nodes. Moves are view-only — the file is never modified.
+- Pan (drag empty canvas) and zoom (scroll wheel + pinch) are handled by a small self-contained `PanZoom` class — no external libraries.
 - The toolbar provides fit-to-view, 1:1 reset, zoom in/out, and a live zoom percentage. Fit-to-view runs automatically when a file loads.
 
 ### Node label resolution
